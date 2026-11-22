@@ -5,602 +5,603 @@
     {
       "question": "What is FluxCD?",
       "options": [
-        "A push-based CI server that applies manifests to clusters",
-        "An open source continuous delivery tool for Kubernetes that follows GitOps",
-        "A container registry for storing Helm charts",
-        "A monitoring and alerting stack for Kubernetes"
+        "A service mesh control plane that reconciles traffic policies from Git into sidecar proxies and distributes them across multiple clusters, and ships its own dashboard to inspect each proxy",
+        "An open source, CNCF-graduated continuous delivery tool for Kubernetes that keeps clusters in sync with Git, OCI or Helm sources using a set of controllers built on GitOps principles",
+        "A Kubernetes-native container registry that stores Helm charts and OCI artifacts and automatically promotes them between environments after running security scans",
+        "A push-based CI server that builds container images and then applies the resulting manifests to clusters through a central pipeline runner holding its own cluster credentials"
       ],
       "answer": 1
     },
     {
       "question": "What does pull-based deployment mean?",
       "options": [
-        "The cluster pulls its desired state instead of a CI server pushing changes in",
-        "The CI server pushes manifests to the cluster with cluster-admin credentials",
-        "Kubelets pull container images from a registry",
-        "Developers run kubectl apply from their laptops"
+        "An agent running inside the cluster periodically fetches the desired state from the source of truth and reconciles the cluster toward it, so no external CI system needs credentials to push changes in",
+        "The CI server pulls the latest cluster state after every deployment and stores it in Git, so the pipeline can compare it with the manifests it is about to push, and a push is only allowed when the stored state shows no drift",
+        "Each node's kubelet pulls updated container images from the registry on a schedule, and the control plane restarts the pods whenever a newer tag appears, with the kubelet comparing digests so that stale pods are replaced automatically",
+        "Developers pull the latest manifests from Git onto their workstations and run kubectl apply against the cluster using their personal kubeconfig credentials, which keeps a personal audit trail in the shell history of each engineer"
       ],
       "answer": 0
     },
     {
       "question": "What is the GitOps Toolkit?",
       "options": [
-        "A CLI plugin that generates Helm charts",
-        "A hosted dashboard for Flux resources",
-        "The set of specialised controllers and APIs that make up Flux v2",
-        "A drop-in replacement for Kustomize"
+        "A command-line plugin for kubectl that scaffolds Helm charts and Kustomize overlays from templates and commits them to the repository on the user's behalf, so teams do not have to write the YAML by hand",
+        "The set of specialised, composable controllers and APIs (source, kustomize, helm, notification and image automation) that Flux v2 is built from, which can also be used to build custom delivery workflows",
+        "A drop-in replacement for Kustomize that adds templating and variable substitution and is run by CI before manifests are committed to Git, so the manifests reach the cluster already fully rendered",
+        "A hosted SaaS dashboard bundled with Flux that visualises Kustomizations and HelmReleases and enforces its own RBAC and SSO for teams, delivered as a hosted service that connects through an outbound agent"
       ],
-      "answer": 2
+      "answer": 1
     },
     {
       "question": "What is a GitRepository object?",
       "options": [
-        "A Helm chart repository definition",
-        "A notification-controller resource for webhooks",
-        "A kustomize-controller resource that applies a path",
-        "A source-controller resource declaring which Git URL and revision to fetch, how often, and which secret holds credentials"
+        "A helm-controller resource that declares a chart repository URL, a chart version range and the values to install, and then runs helm upgrade on the cluster at every interval",
+        "A source-controller resource that declares which Git URL and revision to fetch, how often to poll it, and which Secret holds the credentials, producing an artifact for other controllers",
+        "A notification-controller resource that declares webhook endpoints which Git providers call on every push and that forwards those events to chat channels",
+        "A kustomize-controller resource that declares a path inside the repository, applies the rendered manifests to the cluster and prunes objects that were removed from Git"
       ],
-      "answer": 3
+      "answer": 1
     },
     {
       "question": "What is a Flux Kustomization, and how is it different from a kustomization.yaml file?",
       "options": [
-        "They are the same thing under different names",
-        "A Flux Kustomization is a cluster object pointing at a path inside a source artifact; kustomization.yaml is the Kustomize configuration inside that path",
-        "A Flux Kustomization replaces Kustomize entirely",
-        "kustomization.yaml is the cluster object; Flux Kustomization is only a CLI concept"
+        "They are the same file under two names: Flux reads kustomization.yaml directly from Git, and the Flux Kustomization is created automatically from it without any object in the cluster",
+        "A Flux Kustomization is a cluster object that points at a path inside a source artifact and applies it; kustomization.yaml is the Kustomize configuration file inside that path",
+        "kustomization.yaml is the Kubernetes custom resource that the controller reconciles, while Flux Kustomization is only a CLI alias that flux build uses to render the same file locally",
+        "A Flux Kustomization replaces Kustomize entirely with its own template engine, so a kustomization.yaml file is ignored and never needs to exist in the repository"
       ],
       "answer": 1
     },
     {
       "question": "What does the interval field do?",
       "options": [
-        "It sets how often the controller reconciles the object",
-        "It sets a hard timeout after which the object is deleted",
-        "It sets the retention period of source artifacts",
-        "It sets the delay before the first reconciliation only"
+        "It sets how long source artifacts are retained by source-controller before garbage collection removes older revisions from its storage",
+        "It sets a hard timeout after which a reconciliation that has not finished is cancelled and the object is deleted from the cluster",
+        "It sets the delay before the very first reconciliation after creation, after which the object is only reconciled when a webhook or manual trigger arrives",
+        "It sets how often the controller reconciles the object, re-checking the source or the cluster state and re-applying it, even when nothing new has been pushed"
       ],
-      "answer": 0
+      "answer": 3
     },
     {
       "question": "What does prune: true do?",
       "options": [
-        "Deletes the Git commit after it has been applied",
-        "Prevents Flux from ever deleting anything in the cluster",
-        "Enables garbage collection: objects whose manifests were removed from Git are deleted on the next reconciliation",
-        "Prunes old container images from nodes"
+        "It prevents the controller from ever deleting any object it manages, so resources removed from Git stay in the cluster as orphans until someone deletes them manually",
+        "It enables garbage collection: objects that were previously applied but whose manifests were removed from Git are deleted from the cluster on the next reconciliation",
+        "It removes unused container images from the cluster nodes after every reconciliation, in a way similar to kubelet image garbage collection",
+        "It deletes the Git commit from the source repository after it has been successfully applied, to keep the repository history small and the artifact lightweight"
       ],
-      "answer": 2
+      "answer": 1
     },
     {
       "question": "How do you install Flux on a cluster?",
       "options": [
-        "kubectl apply -f flux.yaml",
-        "flux bootstrap, after running flux check --pre",
-        "helm install flux fluxcd/flux",
-        "flux create cluster --managed"
+        "Run flux check --pre to verify prerequisites, then flux bootstrap, which installs the controllers, commits their manifests to the repository and lets Flux manage itself from there",
+        "Run helm install flux fluxcd/flux, which is the only supported installation method and installs the monolithic Flux v1 operator together with a bundled web UI",
+        "Apply the release manifest once with kubectl apply -f flux.yaml, then add the controllers to Git manually, because Flux cannot manage its own installation after that",
+        "Run flux create cluster --managed, which provisions a cloud Kubernetes cluster, installs Flux on it and creates the Git repository in a single step, and then connects it to the repository with a deploy key"
       ],
-      "answer": 1
+      "answer": 0
     },
     {
       "question": "Which command shows the status of all Kustomizations?",
       "options": [
-        "flux get kustomizations (or flux get ks)",
-        "flux status all",
-        "kubectl get flux",
-        "flux list resources"
+        "flux status all --kind kustomization, which queries the notification-controller for the latest health of each Kustomization and prints a summary table",
+        "kubectl get flux -A, which lists every Flux resource of all kinds because Flux registers a single combined resource type called flux",
+        "flux get kustomizations (or flux get ks), which lists every Kustomization with its revision, ready status and last message; add -A to include all namespaces",
+        "flux list resources --type kustomize, which prints the objects managed by each Kustomization together with the Git commit that created them"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "How do you force Flux to sync now instead of waiting for the interval?",
       "options": [
-        "flux sync kustomization <name>",
-        "flux reset kustomization <name>",
-        "kubectl rollout restart kustomization <name>",
-        "flux reconcile kustomization <name> --with-source"
+        "flux reconcile kustomization <name> --with-source, which first refreshes the referenced source and then reconciles the Kustomization immediately instead of waiting for the interval",
+        "kubectl rollout restart kustomization <name>, which restarts the kustomize-controller pod so that it reconciles every object it manages on startup, and every object is applied again from scratch",
+        "flux sync kustomization <name> --force, which pushes your local working copy to the cluster and bypasses source-controller entirely, without waiting for the interval or for the next Git revision",
+        "flux reset kustomization <name>, which clears the stored revision and makes the controller re-fetch and reapply everything on the next scheduled interval"
       ],
-      "answer": 3
+      "answer": 0
     },
     {
       "question": "Does Flux have a web UI?",
       "options": [
-        "Yes, a full UI ships with Flux",
-        "No — Flux has no UI of its own, though several ecosystem UIs can display Flux resources",
-        "Yes, but only for Helm releases",
-        "Only in the enterprise edition"
+        "Only in a paid commercial edition from the Flux maintainers, because the open source controllers deliberately omit any interface for viewing resources",
+        "Yes, a full web UI is installed by flux bootstrap by default and exposed through an Ingress, with its own login and RBAC independent of Kubernetes",
+        "Core Flux does not ship a web UI of its own and is operated through the CLI, kubectl and Git; ecosystem projects provide dashboards that can display Flux resources",
+        "Yes, but the built-in UI only lists HelmRelease objects, while Kustomizations and sources can be inspected only with the CLI, so teams often add a separate tool for the rest"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "How is Flux different from Argo CD at a high level?",
       "options": [
-        "Argo CD is a set of composable controllers; Flux is a monolith with a UI",
-        "Flux ships a UI while Argo CD does not",
-        "Argo CD centres on an Application resource with its own UI, RBAC and SSO; Flux is composable controllers using Kubernetes RBAC with no bundled UI",
-        "They are identical in architecture and interfaces"
+        "They share the same architecture and API group; the only difference is that Argo CD can sync from Git while Flux can sync only from Helm repositories",
+        "Flux ships a built-in UI with its own RBAC and SSO, while Argo CD has no UI and is operated only through the CLI and Kubernetes RBAC",
+        "Argo CD is a set of small composable controllers that you install individually, while Flux is a single monolithic server with its own database, UI and user management",
+        "Argo CD centres on an Application resource with its own UI, RBAC and SSO; Flux is a set of composable controllers that rely on Kubernetes RBAC and do not bundle a UI"
       ],
-      "answer": 2
+      "answer": 3
     },
     {
       "question": "What is a HelmRelease?",
       "options": [
-        "A helm-controller resource declaring a chart, its version or range, values and lifecycle settings",
-        "A Helm chart repository index",
-        "A Kustomize overlay for Helm values",
-        "A cluster-wide Helm binary installation"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "How do you pass different Helm values per environment?",
-      "options": [
-        "Duplicate the whole HelmRelease per environment with copy-paste",
-        "Patch spec.values with Kustomize overlays per environment, or use valuesFrom to read per-cluster ConfigMaps or Secrets",
-        "Set environment variables on helm-controller",
-        "A HelmRelease can only ever have one set of values"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "How does helm-controller handle a failed upgrade?",
-      "options": [
-        "It ignores failures and retries forever",
-        "You must delete the HelmRelease and recreate it manually",
-        "Failures are only reported to chat, never acted on",
-        "You configure spec.upgrade.remediation (retries, rollback on failure), and spec.install.remediation for installs"
-      ],
-      "answer": 3
-    },
-    {
-      "question": "What is drift detection in HelmRelease?",
-      "options": [
-        "It detects Git commits that were not signed",
-        "It detects drift between two branches in Git",
-        "Helm-controller compares live cluster objects with the release manifest and reports or corrects differences, configured via spec.driftDetection",
-        "It compares container images between registries"
+        "A source-controller resource that indexes a Helm chart repository, downloads its index.yaml and stores the list of chart versions as an artifact for other controllers",
+        "A kustomize-controller resource that renders a Kustomize overlay containing Helm values files and applies the result with kubectl rather than with Helm, and the HelmRelease only records the result",
+        "A helm-controller resource declaring a chart (or a chart reference), its version or semver range, the values to use and lifecycle settings such as install, upgrade, test and rollback behaviour",
+        "A cluster-wide installation of the Helm binary on every node, which lets the kubelet run helm commands whenever a chart changes in Git, so that charts are installed with the node's own Helm client"
       ],
       "answer": 2
     },
     {
-      "question": "What is an OCIRepository and why use it?",
+      "question": "How do you pass different Helm values per environment?",
       "options": [
-        "A source that pulls an artifact from an OCI registry instead of Git, decoupling clusters from Git access",
-        "A mirror of a GitRepository inside a registry namespace",
-        "A HelmRepository limited to private registries",
-        "A secret store for registry credentials"
+        "Define a separate HelmRepository per environment, because the chart source decides which values are used and a HelmRelease reads values only from the chart's default values.yaml",
+        "Set environment variables on the helm-controller Deployment for each cluster, which it injects as values into every HelmRelease it reconciles",
+        "Duplicate the HelmRelease into a separate Git branch per environment and merge branches to promote, because spec.values cannot be patched or overridden by overlays",
+        "Patch spec.values with Kustomize overlays per environment, or use valuesFrom to read per-cluster ConfigMaps or Secrets, so the same base HelmRelease is reused everywhere"
+      ],
+      "answer": 3
+    },
+    {
+      "question": "How does helm-controller handle a failed upgrade?",
+      "options": [
+        "You configure spec.upgrade.remediation (retries and rollback on failure) for upgrades, and spec.install.remediation for installs, so the controller can retry or roll back automatically",
+        "helm-controller always retries a failed upgrade forever with the same values and never rolls back; the only way to change that behaviour is a custom admission webhook",
+        "You must delete the HelmRelease and recreate it manually, because the controller marks the release as permanently failed after the first unsuccessful upgrade",
+        "Failures are only reported as alerts through notification-controller; the controller never retries, rolls back or changes the release on its own, so a person has to decide how to react"
       ],
       "answer": 0
+    },
+    {
+      "question": "What is drift detection in HelmRelease?",
+      "options": [
+        "helm-controller compares the live cluster objects with the Helm release manifest and either reports or corrects the differences, configured via spec.driftDetection (mode enabled or warn)",
+        "It detects Git commits that were not signed by a trusted key and refuses to install any chart version that comes from them, configured via spec.verify, and reports the result on the GitRepository",
+        "It compares the chart version in two Git branches and reports drift when the production branch falls behind staging, configured via spec.branchDrift, and flags the HelmRelease as not Ready",
+        "It compares the container images used by the release against those in a second registry and reports drift when their digests differ, configured via spec.imageDrift"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "What is an OCIRepository and why use it?",
+      "options": [
+        "A mirror of a GitRepository that stores the same commits as OCI layers in a registry namespace, and that must be kept in sync by a CI job Flux does not manage, which adds a second copy of the repository",
+        "A source that pulls an artifact (manifests or charts) from an OCI registry instead of Git, decoupling clusters from Git access and letting you promote immutable, versioned artifacts between environments",
+        "A HelmRepository restricted to private registries that adds image pull secrets, and that can only deliver Helm charts and never plain Kubernetes manifests, so it cannot carry any other kind of content",
+        "A secret store that holds registry credentials so that kubelets on every node can authenticate to private OCI registries when pulling container images, so private images can be pulled without pull secrets"
+      ],
+      "answer": 1
     },
     {
       "question": "How do you order deployments, for example CRDs before the apps that use them?",
       "options": [
-        "Put them in the same Kustomization; Kubernetes sorts it out",
-        "Use spec.postBuild.substitute to add ordering labels",
-        "Order them with flux suspend and flux resume",
-        "Split them into separate Kustomizations and use spec.dependsOn on the dependent one"
-      ],
-      "answer": 3
-    },
-    {
-      "question": "What are health checks in a Kustomization?",
-      "options": [
-        "spec.wait: true waits for all applied resources to become ready, spec.healthChecks lists specific objects, and spec.timeout marks the Kustomization failed",
-        "Health checks are only available in HelmRelease",
-        "Health checks require a Prometheus server",
-        "spec.wait only waits for pods to be scheduled"
+        "Split them into separate Kustomizations and use spec.dependsOn on the dependent one, so the apps wait until the CRDs Kustomization is Ready",
+        "Prefix the files with numbers such as 01-crds.yaml and 02-apps.yaml, because Flux applies files in alphabetical order and waits between them",
+        "Use flux suspend on the apps and flux resume once the CRDs are healthy, because Flux has no declarative way to express ordering between objects",
+        "Use spec.postBuild.substitute to add ordering labels to each object, which tell kustomize-controller which resources to apply first"
       ],
       "answer": 0
     },
     {
+      "question": "What are health checks in a Kustomization?",
+      "options": [
+        "spec.wait only waits for pods to be scheduled, and spec.healthChecks must list every object in the Kustomization or the reconciliation is rejected",
+        "spec.wait: true waits for all applied resources to become ready, spec.healthChecks lists specific objects, and spec.timeout marks the Kustomization failed",
+        "They require a Prometheus server and a ServiceMonitor, because the controller reads readiness from metrics rather than from the Kubernetes API",
+        "Health checks exist only for HelmRelease through spec.test, and a Kustomization always reports Ready as soon as kubectl apply returns successfully"
+      ],
+      "answer": 1
+    },
+    {
       "question": "How do you manage secrets in a Flux repository?",
       "options": [
-        "Commit plain Secrets and restrict repository access",
-        "Store secrets in a ConfigMap",
-        "Let developers apply secrets manually with kubectl",
-        "Encrypt Secret manifests with SOPS (age or cloud KMS) and set spec.decryption.provider: sops on the Kustomization"
+        "Let developers create the Secrets manually with kubectl and set spec.decryption.provider: vault on the Kustomization so Flux fetches the values from a vault server",
+        "Encrypt Secret manifests with SOPS (using age or a cloud KMS) and set spec.decryption.provider: sops on the Kustomization, so the controller decrypts them at apply time",
+        "Commit plain Secrets to a private repository and rely on repository access control, because Flux encrypts all Secret objects automatically when it applies them",
+        "Store the values in a ConfigMap and reference them with secretKeyRef, because ConfigMaps are encrypted at rest by kustomize-controller before being applied"
       ],
-      "answer": 3
+      "answer": 1
     },
     {
       "question": "What is post-build variable substitution?",
       "options": [
-        "It rewrites Kubernetes API versions after the build",
-        "It builds manifests before Kustomize runs",
-        "It replaces ${VAR} placeholders after the Kustomize build using spec.postBuild.substitute or substituteFrom",
-        "It substitutes container image tags in Git"
+        "It runs a step before Kustomize that generates manifests from templates stored in a ConfigMap, using spec.postBuild.templates, so Kustomize receives manifests that no longer need patches",
+        "It substitutes container image tags directly in Git after the build and commits the new values back to the branch, using spec.postBuild.images, so Git always shows the newest tag",
+        "It replaces ${VAR} placeholders after the Kustomize build using spec.postBuild.substitute or substituteFrom (ConfigMaps and Secrets), so one base can serve many environments",
+        "It rewrites Kubernetes apiVersion fields after the build, converting deprecated API versions to those the cluster supports, using spec.postBuild.apiMigrate"
       ],
       "answer": 2
     },
     {
       "question": "How does image update automation work?",
       "options": [
-        "ImageRepository scans tags, ImagePolicy picks the newest by rule, and ImageUpdateAutomation rewrites manifests at marker comments and commits",
-        "ImageRepository edits Git directly on every new tag",
-        "Flux patches the running Deployment directly in the cluster",
-        "Image automation only works with plain Helm charts"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "How do you send Flux events to Slack or Teams?",
-      "options": [
-        "Add a Slack URL annotation to every Kustomization",
-        "Create an Alert that references a Provider holding the chat type and a secret with the webhook or token",
-        "Install a Slack plugin inside kustomize-controller",
-        "notification-controller posts to Slack by default"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "What is a Receiver?",
-      "options": [
-        "A resource that receives Git pushes and deletes old commits",
-        "A proxy that caches source artifacts",
-        "A notification-controller resource exposing a webhook endpoint that triggers immediate reconciliation",
-        "A receiver of Helm chart events inside the cluster"
+        "ImageRepository edits the manifests in Git directly whenever a new tag appears, and ImagePolicy only validates the tag format without choosing between versions",
+        "The image-reflector-controller patches the running Deployment in the cluster with the newest tag, and Git is updated later through a manual pull request",
+        "ImageRepository scans tags, ImagePolicy picks the newest one by rule, and ImageUpdateAutomation rewrites manifests at marker comments and commits to Git",
+        "Image automation works only with Helm charts, because ImageUpdateAutomation can rewrite values.yaml files but cannot edit plain Kubernetes manifests"
       ],
       "answer": 2
     },
     {
-      "question": "How do you pause Flux for a resource during maintenance?",
+      "question": "How do you send Flux events to Slack or Teams?",
       "options": [
-        "flux suspend kustomization <name>, then flux resume kustomization <name>",
-        "flux pause kustomization <name>",
-        "Scale the controller Deployment to zero",
-        "Delete the Kustomization and re-add it later"
+        "Create an Alert that references a Provider holding the chat type and a Secret with the webhook or token; notification-controller then forwards the matching events",
+        "Add the Slack webhook URL as an annotation on every Kustomization, and kustomize-controller posts a message to the channel after each reconciliation",
+        "Install a Slack plugin inside kustomize-controller and enable it with a controller flag, because only source-controller supports generic webhook providers",
+        "notification-controller posts to Slack by default once Flux is bootstrapped, using the webhook stored in a default Secret in the flux-system namespace"
       ],
       "answer": 0
     },
     {
-      "question": "How do you preview what a change will do before merging?",
+      "question": "What is a Receiver?",
       "options": [
-        "flux preview kustomization <name>",
-        "flux build --dry-run=server",
-        "kubectl diff -f .",
-        "flux diff kustomization <name> --path ./local/path"
+        "A notification-controller resource that exposes a webhook endpoint (for example for GitHub or a registry) and triggers an immediate reconciliation of the referenced objects when it is called",
+        "A receiver of Helm chart events inside the cluster that installs new chart versions as soon as helm-controller notices them in the registry, and then runs a Helm test against the new version",
+        "A resource that receives Git pushes and deletes old commits from the repository so that source-controller stores only the latest revision, which keeps the artifact storage from growing without limit",
+        "A proxy that caches source artifacts and serves them to other clusters over HTTP so that each cluster does not need to fetch from Git itself, which also protects clusters from Git outages"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "How do you pause Flux for a resource during maintenance?",
+      "options": [
+        "flux pause kustomization <name> halts reconciliation and flux unpause restores it, and the managed objects are removed from the cluster while it is paused",
+        "Delete the Kustomization and re-add it afterwards, which is safe because Flux always keeps the applied objects and never prunes them on deletion, as long as the namespace itself is unchanged",
+        "Scale the kustomize-controller Deployment to zero, which is the only supported way to pause one Kustomization without affecting the others, then back up when the work is done",
+        "flux suspend kustomization <name> stops reconciliation of that Kustomization while you work, and flux resume kustomization <name> re-enables it and triggers a reconciliation"
       ],
       "answer": 3
     },
     {
+      "question": "How do you preview what a change will do before merging?",
+      "options": [
+        "flux preview kustomization <name> --branch pr-123, which fetches the pull request branch and prints a rendered summary of the objects it would create, and compares them with the live cluster",
+        "kubectl diff -f ., because Flux stores no revision information and the standard Kubernetes diff is the only way to compare rendered manifests with the cluster",
+        "flux diff kustomization <name> --path ./local/path, which builds the local manifests and shows what would change in the cluster compared to the live state, without applying anything",
+        "flux build --dry-run=server, which sends the manifests to the API server and returns a diff against the Git revision currently applied in the cluster, without changing any object in the cluster"
+      ],
+      "answer": 2
+    },
+    {
       "question": "How do you find which Flux object manages a given Deployment?",
       "options": [
-        "flux trace on the object, or the kustomize.toolkit.fluxcd.io/name and namespace labels",
-        "kubectl get deployment -o yaml shows the Git commit",
-        "flux get all --managed-by",
-        "Only by searching the repository by hand"
+        "Only by searching the repository by hand, because Flux adds no labels or other metadata to the objects it applies; a search tool or spreadsheet is the only reliable option",
+        "Run flux trace on the object, or read the kustomize.toolkit.fluxcd.io/name and kustomize.toolkit.fluxcd.io/namespace labels that Flux adds to everything it applies",
+        "kubectl get deployment -o yaml shows the Git commit and the Kustomization name in its managedFields, so no Flux-specific command is needed; the owner can be read straight from that output",
+        "flux get all --managed-by <deployment> lists the Flux objects that reference the Deployment, together with the Git revision they last applied"
       ],
-      "answer": 0
+      "answer": 1
     },
     {
       "question": "What happens if someone edits a Flux-managed object with kubectl?",
       "options": [
-        "The edit persists until the next Flux upgrade",
-        "Flux stops reconciling that object permanently",
-        "Flux commits the manual change back to Git",
-        "On the next reconciliation kustomize-controller re-applies the Git state and the manual change is overwritten"
+        "The edit persists until the next Flux upgrade, because the controller only reapplies objects when the Git revision or the controller version changes",
+        "Flux commits the manual change back to the Git repository so the cluster and Git stay in sync, as long as the commit can be signed",
+        "Flux marks the object as unmanaged and permanently stops reconciling it until someone removes the label and annotation it added",
+        "On the next reconciliation kustomize-controller re-applies the state from Git, detects the drift and overwrites the manual change"
       ],
       "answer": 3
     },
     {
       "question": "How does Flux authenticate to a private Git repository?",
       "options": [
-        "With a Secret referenced by spec.secretRef on the GitRepository, holding SSH keys and known hosts or HTTPS credentials",
-        "With cluster-admin credentials in the controller environment",
-        "With a personal access token in plaintext in the GitRepository spec",
-        "Flux cannot access private repositories"
+        "Flux cannot access private repositories directly; a separate pull-through proxy has to mirror the repository to a public location first",
+        "With the cluster-admin ServiceAccount token, which source-controller presents to the Git server because Git providers trust the Kubernetes API server's identity",
+        "With a personal access token written in plaintext in spec.url of the GitRepository, which Flux masks when the object is displayed",
+        "With a Secret referenced by spec.secretRef on the GitRepository, holding either SSH keys and known hosts or HTTPS credentials such as a username and token"
       ],
-      "answer": 0
+      "answer": 3
     },
     {
       "question": "How do you upgrade Flux itself?",
       "options": [
-        "Delete and reinstall the controllers by hand",
-        "Flux upgrades itself with no action required",
-        "Upgrade the CLI, then rerun flux bootstrap with the same arguments so Flux updates itself through Git",
-        "Run helm upgrade flux on each cluster"
+        "Upgrade the CLI, then rerun flux bootstrap with the same arguments so Flux updates its own controllers through Git",
+        "Delete the controllers and reinstall them by hand with kubectl apply, because bootstrap can run only once per cluster and refuses to update an existing installation",
+        "Run helm upgrade flux fluxcd/flux on each cluster, since Flux is always installed through a Helm release owned by helm-controller",
+        "Flux upgrades itself automatically with no action required, because source-controller checks daily for new releases and updates the controllers directly in the cluster"
       ],
-      "answer": 2
+      "answer": 0
     },
     {
       "question": "How would you lay out a Git repository for many clusters?",
       "options": [
-        "A clusters/ directory with one folder per cluster, infrastructure/ for shared controllers and CRDs, and apps/ with base and per-environment overlays",
-        "A branches/ directory with one branch per cluster",
-        "One repository per Kustomization",
-        "A single flat folder with every manifest"
+        "A clusters/ directory with one folder per cluster, an infrastructure/ directory for shared controllers and CRDs, and an apps/ directory with a base and per-environment overlays",
+        "A single flat folder containing every manifest for every cluster, with per-cluster differences handled by adding if/else blocks to the YAML files, which keeps the repository simple",
+        "A branches/ layout with one long-lived branch per cluster, where each branch holds the full set of manifests and changes are promoted by merging between branches",
+        "One repository per Kustomization, where each application gets its own repository and Flux bootstraps a separate flux-system namespace for each, which isolates every team's changes"
       ],
       "answer": 0
     },
     {
       "question": "How do you implement multi-tenancy with Flux?",
       "options": [
-        "One shared namespace for all tenants with full RBAC",
-        "Tenants get cluster-admin and are trusted",
-        "Multi-tenancy is not possible with Flux",
-        "A namespace and limited service account per tenant, set via spec.serviceAccountName so Flux impersonates it"
+        "Place all tenants in one shared namespace with a ClusterRoleBinding to cluster-admin, and rely on naming conventions to keep their resources separate, and review changes through pull requests",
+        "Give each tenant its own namespace and a limited ServiceAccount, and set spec.serviceAccountName on its Kustomizations and HelmReleases so Flux impersonates that account and cannot exceed its permissions",
+        "Run all tenants through the flux-system Kustomization, since Flux filters objects by commit author and rejects changes that touch another team's files, which makes ownership obvious from the commit history",
+        "Give each tenant its own Flux installation with cluster-admin rights, because the controllers support only one set of RBAC permissions per cluster and cannot impersonate accounts"
       ],
-      "answer": 3
+      "answer": 1
     },
     {
       "question": "How do you promote a release from staging to production?",
       "options": [
-        "Rerun flux bootstrap for production",
-        "A pull request bumping the version in the production overlay, OCI artifacts promoted by retagging, or image policies with per-environment tag patterns",
-        "Promotion is only possible by copying YAML by hand",
-        "Edit the live Deployment in production"
+        "Edit the live Deployment in production and let drift detection copy the change back to the Git repository so staging and production converge",
+        "Run flux promote kustomization staging production, which copies the live state of the staging cluster into the production overlay in Git",
+        "A pull request that bumps the version in the production overlay, OCI artifacts promoted by retagging, or image policies with per-environment tag patterns",
+        "Rerun flux bootstrap against the production cluster with the staging branch as the source, which copies the staged manifests across and overwrites the production overlay"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "How do you monitor Flux at scale?",
       "options": [
-        "kubectl logs the controllers and read them daily",
-        "Flux ships a built-in monitoring UI",
-        "Prometheus metrics plus the published example Grafana dashboards; alert on not-Ready resources, reconciliation duration and suspended objects",
-        "Only Argo CD can be monitored"
+        "Read kubectl logs from every controller each day and keep a record of failures, because Flux exposes no metrics endpoint or standard status fields",
+        "Use Prometheus metrics plus the published example Grafana dashboards, and alert on resources that are not Ready, on reconciliation duration and on suspended objects",
+        "Use Argo CD's metrics server to watch Flux, because Flux controllers cannot export metrics and only Argo CD resources can be monitored with Prometheus",
+        "Flux ships a built-in monitoring UI that aggregates the status of all clusters in one place and sends reports to its own alert manager"
       ],
-      "answer": 2
+      "answer": 1
     },
     {
       "question": "How do you secure the supply chain in a Flux setup?",
       "options": [
-        "Sign OCI artifacts and images in CI (for example with Cosign) and configure OCIRepository verification so Flux only applies signed content",
-        "Trust every artifact that arrives from the registry",
-        "Disable pruning to protect the cluster",
-        "Give every developer cluster-admin"
+        "Disable pruning and health checks so that a compromised artifact cannot delete existing objects or trigger any rollout in the cluster",
+        "Give each developer cluster-admin on a staging cluster and require them to run flux reconcile manually after reviewing every changed manifest by eye",
+        "Trust every artifact that arrives from the registry, since the Flux controllers verify image digests automatically using the registry's TLS certificate",
+        "Sign OCI artifacts and images in CI (for example with Cosign) and configure OCIRepository verification so Flux only applies signed content"
       ],
-      "answer": 0
+      "answer": 3
     },
     {
       "question": "How do you handle CRD and controller upgrades safely?",
       "options": [
-        "Delete all CRDs and recreate them after the upgrade",
-        "Upgrade controllers and CRDs at the same time in production",
-        "Keep CRDs in their own Kustomization that other layers depend on, test in staging, use HelmRelease CRD policies deliberately and be careful with pruning CRDs",
-        "Always set prune: true on CRDs to keep them clean"
+        "Delete all CRDs and recreate them after the controller upgrade, because Kubernetes does not support updating a CRD that already has custom resources",
+        "Upgrade controllers and CRDs together in one step in production, and rely on kustomize-controller to roll back automatically when any custom resource fails validation",
+        "Always set prune: true on the Kustomization holding the CRDs so old versions are cleaned up, as deleting a CRD never removes the custom resources stored under it",
+        "Keep CRDs in their own Kustomization that other layers depend on, test the upgrade in staging, use HelmRelease CRD policies deliberately and be careful with pruning CRDs"
       ],
-      "answer": 2
+      "answer": 3
     },
     {
       "question": "How would you bootstrap hundreds of clusters consistently?",
       "options": [
-        "Run bootstrap by hand on each cluster with slightly different folders",
-        "Automate cluster creation with IaC, run bootstrap during provisioning and template the cluster folder so the folder is the only per-cluster difference",
-        "Use one shared Kustomization for every cluster",
-        "Skip bootstrap and apply manifests with kubectl"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "What are the risks of image update automation in production?",
-      "options": [
-        "None — image automation is always safe in production",
-        "It only affects staging clusters by design",
-        "It removes the need for Git entirely",
-        "The bot needs write credentials and an unexpected tag can roll out without review; limit it to staging or strict semver patch ranges and require PRs plus signature verification"
-      ],
-      "answer": 3
-    },
-    {
-      "question": "How do you reduce reconciliation load on a large cluster?",
-      "options": [
-        "Set every interval to 10 seconds",
-        "Use sensible intervals, trigger syncs with Receivers instead of short polling, split very large Kustomizations and tune controller concurrency",
-        "Disable health checks",
-        "Put every resource in one giant Kustomization"
-      ],
-      "answer": 1
-    },
-    {
-      "question": "When would you choose Flux over Argo CD, or the other way round?",
-      "options": [
-        "Flux is strictly better in every case",
-        "Argo CD has no UI",
-        "Both tools require a UI to work",
-        "Flux fits teams wanting everything as Kubernetes resources, native RBAC, OCI-based delivery and composable controllers; Argo CD fits teams wanting a built-in developer UI, application-centric views and its own SSO/RBAC"
-      ],
-      "answer": 3
-    },
-    {
-      "question": "A Kustomization shows “Ready False” with a build error. What do you check?",
-      "options": [
-        "Read the message with flux get ks <name> and flux events --for Kustomization/<name>; look for invalid YAML, a missing resource in kustomization.yaml or a bad patch target, then reproduce locally with flux build kustomization",
-        "Ignore it — Flux will fix it on retry",
-        "Restart the kustomize-controller pod",
-        "Delete the Kustomization and start over"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "Flux applied a commit but the pods are still running the old image. Why?",
-      "options": [
-        "The commit was never pushed to Git",
-        "Flux does not deploy container images",
-        "Check the applied revision matches the commit, whether the manifest really changed the image, whether a HelmRelease values override pins the old tag, and whether the rollout is stuck on readiness",
-        "Kubelet needs a manual restart after every commit"
+        "Skip bootstrap and apply the Flux install manifests with kubectl from a CI job on every commit, because bootstrap is limited to ten clusters per repository",
+        "Create one giant Kustomization at the repository root that every cluster applies, and handle per-cluster differences by editing the live objects after sync",
+        "Automate cluster creation with IaC, run flux bootstrap during provisioning and template the cluster folder, so that the folder is the only per-cluster difference",
+        "Run flux bootstrap by hand on each cluster with a slightly different folder, and edit each cluster's manifests individually so that every one is tuned"
       ],
       "answer": 2
     },
     {
-      "question": "The GitRepository fails with an authentication error after a key rotation. How do you fix it?",
+      "question": "What are the risks of image update automation in production?",
       "options": [
-        "Rebuild the whole cluster",
-        "Update the Secret referenced by secretRef with the new key, confirm the public key is registered as a deploy key, check known hosts and reconcile the source",
-        "Delete the GitRepository and recreate it without credentials",
-        "Disable SSH and use unauthenticated HTTPS"
+        "It can only ever affect staging clusters, because ImageUpdateAutomation refuses to run against objects in a namespace labelled production, so production objects are never touched by the bot",
+        "It removes the need for Git, so the audit trail moves to the registry and tags no longer need to follow a version policy or be reviewed, which simplifies the delivery pipeline",
+        "The bot needs write credentials, and an unexpected tag can roll out without review; limit it to staging or strict semver patch ranges, and require pull requests plus signature verification",
+        "There are none, because image automation only reads from the registry and never needs write access to Git, so it is safe in production without extra controls"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
-      "question": "A HelmRelease is stuck after a failed upgrade. What do you do?",
+      "question": "How do you reduce reconciliation load on a large cluster?",
       "options": [
-        "Delete the HelmRelease immediately",
-        "Increase the interval to hide the failure",
-        "Disable remediation so failures are ignored",
-        "Inspect status and events, check the Helm history, fix the values or chart in Git, and if retries are exhausted use reconcile --force or suspend and resume"
+        "Put every resource into one giant Kustomization so there is a single reconciliation loop, because fewer objects always means less work for the controller",
+        "Disable health checks, pruning and drift correction globally, because the controllers do no work when they have nothing to verify or clean up",
+        "Set every interval to 10 seconds so changes are picked up quickly, and raise the CPU limits of the controllers to handle the extra reconciliations",
+        "Use sensible intervals, trigger syncs with Receivers instead of short polling, split very large Kustomizations and tune controller concurrency"
       ],
       "answer": 3
     },
     {
-      "question": "Someone deleted a namespace that Flux manages. What happens and what should you do?",
+      "question": "When would you choose Flux over Argo CD, or the other way round?",
       "options": [
-        "If the namespace and its contents are in Git, Flux recreates them on the next reconciliation; data in persistent volumes may be lost, so check backups and tighten RBAC",
-        "Nothing happens — Flux never recreates namespaces",
-        "Flux deletes the whole cluster",
-        "You must run bootstrap again on a new cluster"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "A team removed a directory from Git and production services vanished. How do you prevent this?",
-      "options": [
-        "Set prune: true everywhere to be safe",
-        "Pruning did what it was told; prevent repeats with code owners, required reviews on production paths, CI checks that flag large deletions and the kustomize.toolkit.fluxcd.io/prune: disabled annotation on critical objects",
-        "Revoke Git access for everyone",
-        "Flux should never delete anything under any setting"
+        "Argo CD is the only one that supports Helm and Kustomize, while Flux is restricted to plain YAML, so the choice depends on the templating tool the team uses",
+        "Flux fits teams wanting everything as Kubernetes resources, native RBAC and composable controllers; Argo CD fits teams wanting a built-in developer UI, application-centric views and its own SSO/RBAC",
+        "Flux is strictly the better choice in every case because it is lighter, so Argo CD should only be used when a team already owns a commercial licence for it",
+        "Both require a web UI to be installed before they can reconcile anything, so the choice depends mostly on which UI the team finds easier to use; most teams therefore install both and compare them"
       ],
       "answer": 1
     },
     {
+      "question": "A Kustomization shows “Ready False” with a build error. What do you check?",
+      "options": [
+        "Restart the kustomize-controller pod to clear its cache, then run flux reconcile source git to rebuild the artifact from scratch, which regenerates every artifact the Kustomization needs",
+        "Wait for the next retry, since the Kustomization retries with exponential backoff until the build succeeds and does not need any change in the repository",
+        "Delete the Kustomization and recreate it with flux create kustomization, because a build error means its stored state is corrupted, and re-enter the path and source reference by hand",
+        "Read the message with flux get ks <name> and flux events --for Kustomization/<name>; look for invalid YAML, a missing resource or a bad patch target, then reproduce with flux build kustomization"
+      ],
+      "answer": 3
+    },
+    {
+      "question": "Flux applied a commit but the pods are still running the old image. Why?",
+      "options": [
+        "Check that the applied revision matches the commit, whether the manifest really changed the image, whether a HelmRelease values override pins the old tag, and whether the rollout is stuck on readiness",
+        "Flux does not deploy container images, it only reconciles Kubernetes resources, so a new image tag has to be rolled out separately by the CI system, and the Deployment changes only when it is restarted",
+        "The kubelet must be restarted manually on each node after every commit, because Flux updates the manifests but never triggers a pod rollout, and the old image stays cached until then",
+        "The commit was never pushed to Git; Flux deploys whatever is in the cluster's local cache, so the old image keeps running until the cache expires, and the cluster has nothing new to apply meanwhile"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "The GitRepository fails with an authentication error after a key rotation. How do you fix it?",
+      "options": [
+        "Delete the GitRepository and recreate it without credentials, then add the new key to the controller Deployment as an environment variable",
+        "Rebuild the cluster and run bootstrap again, because source-controller stores the SSH key in its container image and cannot read it from a Secret",
+        "Disable SSH and switch to unauthenticated HTTPS for the duration of the rotation, then restore the key once the old one has been revoked",
+        "Update the Secret referenced by secretRef with the new key, confirm the public key is registered as a deploy key, check the known hosts entry and reconcile the source"
+      ],
+      "answer": 3
+    },
+    {
+      "question": "A HelmRelease is stuck after a failed upgrade. What do you do?",
+      "options": [
+        "Inspect its status and events, check the Helm history, fix the values or chart in Git, and if retries are exhausted use flux reconcile helmrelease --force or suspend and resume it",
+        "Delete the HelmRelease immediately and let Flux recreate it, since uninstalling and reinstalling always restores a healthy release without any data loss",
+        "Increase the interval to a day so the failure disappears from the dashboards, and wait for helm-controller to retry on its own once, then accept the release as it is",
+        "Disable remediation and set spec.suspend: true permanently, because a failed upgrade cannot be retried by helm-controller once Helm has recorded it as failed"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Someone deleted a namespace that Flux manages. What happens and what should you do?",
+      "options": [
+        "Nothing happens, because Flux never recreates namespaces, and the objects inside are restored only when someone runs flux reconcile --force",
+        "If the namespace and its contents are in Git, Flux recreates them on the next reconciliation; data in persistent volumes may be lost, so check backups and tighten RBAC",
+        "Flux treats the deletion as the desired state, commits it to Git and marks every object in that namespace as suspended until an administrator resumes them",
+        "Flux immediately deletes the Git path that contained the namespace so that Git matches the cluster, and the team must restore it from a backup"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "A team removed a directory from Git and production services vanished. How do you prevent this?",
+      "options": [
+        "Revoke write access to Git for everyone and require changes to be applied with kubectl, so that deletions can never reach production through Flux, and keep the repository read-only for everyone",
+        "Flux should never delete anything under any setting, so pruning is a bug and the fix is to remove the prune field from the Kustomization API, and teams should rely on manual cleanup instead",
+        "Set prune: true on every Kustomization to be safe, since pruning only deletes objects after confirming each one with an administrator through a manual approval step",
+        "Pruning did what it was told; add code owners, required reviews on production paths, CI checks that flag large deletions and the kustomize.toolkit.fluxcd.io/prune: disabled annotation on critical objects"
+      ],
+      "answer": 3
+    },
+    {
       "question": "Reconciliation of a large monorepo is slow. How do you speed it up?",
       "options": [
-        "Set the GitRepository interval to 1s",
-        "Disable health checks and pruning",
-        "Use sparse checkout or include/ignore rules on the GitRepository, split Kustomizations, raise intervals on stable layers, use Receivers and consider OCI artifacts per environment",
-        "Move everything into one Kustomization"
+        "Set the GitRepository interval to 1 second so changes are fetched instantly, and increase artifact retention so older revisions are not downloaded again, which keeps the cluster closer to Git",
+        "Move everything into one Kustomization and enable spec.force so the controller applies the whole monorepo as a single server-side apply operation, so large diffs are applied in one step",
+        "Use spec.ignore rules or a .sourceignore file to exclude unrelated paths, split Kustomizations, raise intervals on stable layers, use Receivers instead of tight polling and consider OCI artifacts",
+        "Disable health checks and pruning on every Kustomization, because they force the controller to read the whole repository on each reconciliation, which also shortens the time spent downloading artifacts"
       ],
       "answer": 2
     },
     {
       "question": "You need an emergency hotfix outside the normal pipeline. How do you handle it with GitOps?",
       "options": [
-        "Patch the cluster by hand and leave Git unchanged",
-        "Disable Flux permanently",
-        "Delete the Kustomization until the incident ends",
-        "Commit the fix through an expedited review then reconcile with --with-source; if you must patch live, suspend first, record the change, commit it and resume"
+        "Disable Flux permanently on the affected cluster by deleting the flux-system namespace, then manage it with kubectl until the next planned release, and bootstrap again afterwards",
+        "Patch the cluster by hand with kubectl and leave Git unchanged, since Flux ignores manual changes made during an incident when a break-glass label is present",
+        "Commit the fix through an expedited review and reconcile with --with-source; if you must patch the live cluster, suspend reconciliation first, record the change, commit it to Git and then resume",
+        "Delete the Kustomization for the duration of the incident and recreate it afterwards, because suspending it would cause Flux to revert the hotfix at once"
       ],
-      "answer": 3
+      "answer": 2
     },
     {
       "question": "Image automation commits fail with a permission error. What is wrong?",
       "options": [
         "The credential used by ImageUpdateAutomation probably has read-only access (typical for bootstrap deploy keys); give it write access to the target branch and check branch protection rules",
-        "The registry token expired",
-        "Image automation cannot write to Git at all",
-        "The commit message format is invalid"
+        "ImageUpdateAutomation cannot write to Git at all; it only updates the live cluster, so the commit must be created by a separate CI job; the CI pipeline remains the only component that writes to Git",
+        "The registry token used by ImageRepository has expired, so the controller cannot read tags and therefore cannot push the commit that records them; renewing the token should restore it",
+        "The commit message template has an invalid format, because Git providers reject commits that do not follow the exact Conventional Commits specification"
       ],
       "answer": 0
     },
     {
       "question": "Two Kustomizations try to manage the same object. What happens?",
       "options": [
-        "The last one to reconcile wins permanently",
-        "Kubernetes rejects the second Kustomization at admission",
-        "They fight — each reconciliation overwrites the other and the object flaps; use flux trace to find both owners and make one Kustomization the only owner",
-        "Flux merges both versions automatically"
+        "Flux automatically merges both versions of the object field by field and applies the combined result, so the Kustomizations never conflict",
+        "The last Kustomization to reconcile becomes the permanent owner, and the first one detects the conflict and drops the object from its inventory without further reconciliation",
+        "They fight: each reconciliation overwrites the other and the object flaps; use flux trace to find both owners and make one Kustomization the only owner",
+        "Kubernetes rejects the second Kustomization at admission because the ownership labels conflict, so only one of them is ever created"
       ],
       "answer": 2
     },
     {
       "question": "A cluster must be rebuilt from scratch after a disaster. How does Flux help?",
       "options": [
-        "Nothing — Flux state lives only inside the cluster",
-        "Create the new cluster, run bootstrap against the same repository path and Flux reapplies everything in dependency order; restore the SOPS key first, and restore data from backups",
-        "Run kubectl apply on every manifest by hand",
-        "Flux restores persistent volumes from Git"
+        "Flux state lives only inside the cluster, so a rebuild needs a restore of etcd from a backup before any manifest can be reapplied; nothing can be recovered from the repository alone",
+        "Run kubectl apply on each manifest in the repository by hand in alphabetical order, because Flux cannot be bootstrapped against a repository that already has content",
+        "Bootstrap restores the persistent volumes from Git, so applications and their data return exactly as they were before the disaster, with no backup needed",
+        "Create the new cluster and run bootstrap against the same repository path; Flux reapplies everything in dependency order. Restore the SOPS key first, and restore data from backups"
       ],
-      "answer": 1
+      "answer": 3
     },
     {
       "question": "Alerts show a Kustomization flipping between Ready and not Ready. How do you investigate?",
       "options": [
-        "Assume it is a Flux bug and reinstall",
-        "Delete the Kustomization and wait",
-        "Check the cluster disk space",
-        "Look for another actor changing the same objects (an operator, a mutating webhook or a second Kustomization) and for health check timeouts too short for slow-starting pods; flux events and controller logs show which field changes back and forth"
+        "Check the cluster disk space and node memory only, because Flux reports Ready False whenever the nodes run out of ephemeral storage, and add capacity to the nodes before looking at anything in Git",
+        "Delete the Kustomization and wait for the alerts to stop, since a flapping status always means its stored inventory is corrupted, and recreate it from scratch with the same name and path",
+        "Treat it as a Flux bug, reinstall the controllers and ignore the alerts, because a Kustomization should never change status once it has become Ready, and wait for a patch release to remove the status changes",
+        "Look for another actor changing the same objects (an operator, a mutating webhook or a second Kustomization) and for health check timeouts too short for slow-starting pods; flux events shows which field flips"
       ],
       "answer": 3
     },
     {
       "question": "Explain the pull model. Why does it matter?",
       "options": [
-        "In a push model CI holds cluster credentials and applies changes; in GitOps an in-cluster controller polls Git and reconciles, so no pipeline holds a kubeconfig with cluster-admin and the blast radius of a leaked CI token shrinks",
-        "The pull model means developers pull the repository before editing it",
-        "It means images are pulled from a registry at deploy time",
-        "It removes the need for a Git repository entirely"
+        "It means container images are pulled from a registry at deploy time instead of being built in the cluster, which reduces startup time and image size, so the cluster does not need to hold build tools",
+        "The pull model means developers pull the repository before editing it, which prevents merge conflicts and gives every change a clear author in the history, so each pull request starts from the latest commit",
+        "In a push model CI holds cluster credentials and applies changes; in GitOps an in-cluster controller pulls from Git and reconciles, so no pipeline holds cluster-admin and the blast radius of a leaked CI token shrinks",
+        "It removes the need for a pipeline, because the in-cluster controller builds images from source and tests them, so no CI system is required at all, and removes the cost of a separate build system"
       ],
-      "answer": 0
+      "answer": 2
     },
     {
       "question": "What is a sync wave in Argo CD and when do you use one?",
       "options": [
-        "A load-balancing strategy across clusters",
-        "The argocd.argoproj.io/sync-wave annotation orders resources inside one sync: lower-numbered waves apply first, each waiting for health before the next",
-        "A branch strategy for releasing versions",
-        "A way to delay image pulls during rollout"
+        "A way of delaying image pulls during a rollout, so each wave of pods waits for the previous one to pass its readiness probes before the kubelet fetches images",
+        "A branch strategy for releasing versions, where each wave is a Git branch that is promoted to the next environment after a manual approval, and merges between waves are done by the release manager",
+        "The argocd.argoproj.io/sync-wave annotation orders resources inside one sync: lower-numbered waves apply first, and each wave waits for the previous one to become healthy before the next starts",
+        "A load-balancing strategy across clusters that sends sync operations to the least busy application controller shard first, spreading the work in waves"
       ],
-      "answer": 1
+      "answer": 2
     },
     {
       "question": "How does Argo CD decide if an application is healthy?",
       "options": [
-        "It only checks that kubectl apply succeeded",
-        "It waits for a human to approve the sync",
+        "It only checks that the kubectl apply operation succeeded, and reports Healthy as soon as every manifest has been accepted by the API server, even if the pods never start or the Ingress has no backend",
+        "It waits for a human to approve the sync in the UI, and marks the application Healthy only after that approval has been recorded, regardless of whether the Deployments and Services are running",
         "Built-in health checks cover standard types (Deployments, Services, Ingress); custom resources report Progressing or Unknown unless you write a custom Lua health check under resource.customizations in argocd-cm",
-        "Health is determined purely by the Git commit status"
+        "Health is determined purely by the Git commit status reported by the Git provider's CI checks, and the live resource state is never inspected, so a green pipeline always means a healthy application"
       ],
       "answer": 2
     },
     {
       "question": "What is App-of-Apps and why not just list every application manually?",
       "options": [
-        "A tool that generates Helm charts automatically",
-        "A single Application that manages one namespace only",
-        "A deprecated pattern replaced by sync waves",
-        "A parent Application manages child Application manifests, giving one commit to onboard a service, a bootstrap point for a new cluster and a blast-radius boundary"
-      ],
-      "answer": 3
-    },
-    {
-      "question": "Explain Flux's controller architecture",
-      "options": [
-        "Separate controllers each doing one job: source (Git/Helm/OCI artifacts), kustomize (applies overlays), helm (reconciles HelmReleases) and notification (sends alerts)",
-        "A single monolithic controller that handles all resource types",
-        "Two controllers: one for Git polling and one for the web UI",
-        "Controllers are optional plugins installed on top of a core agent"
-      ],
-      "answer": 0
-    },
-    {
-      "question": "How does drift detection actually work?",
-      "options": [
-        "It compares two Git branches on every commit",
-        "It uses a webhook from the cluster API to block manual edits",
-        "A reconciliation loop compares live cluster state with Git on an interval, and either reports drift or, with self-heal enabled, re-applies the Git version",
-        "It only runs when a developer triggers it manually"
-      ],
-      "answer": 2
-    },
-    {
-      "question": "How do you handle secrets in a GitOps repo?",
-      "options": [
-        "Commit encrypted Secrets and let each cluster decrypt them",
-        "Never commit plaintext secrets; use Sealed Secrets (cluster-specific key, re-encrypt per cluster), SOPS (encrypt fields with KMS/PGP/age, decrypted at apply time) or External Secrets Operator (pulls at runtime, Git stores only a reference)",
-        "Store them in a ConfigMap so they are easy to audit",
-        "Put them in the CI pipeline variables only"
+        "A deprecated pattern replaced by sync waves, which is why new installations should list every Application manually in the Argo CD UI",
+        "A parent Application manages child Application manifests, giving one commit to onboard a service, a bootstrap point for a new cluster and a blast-radius boundary",
+        "A tool that generates Helm charts for every application automatically, so you do not have to write any manifests when you add a new service",
+        "A single Application that manages one namespace only, where each child resource is declared as a separate sync wave, so each team needs a separate instance of Argo CD"
       ],
       "answer": 1
     },
     {
-      "question": "Argo CD vs Flux: what would make you pick one over the other?",
+      "question": "Explain Flux's controller architecture",
       "options": [
-        "Argo CD ships a UI, has stronger multi-cluster fan-out from one control plane and centres on the Application resource; Flux is more Unix-philosophy with smaller composable controllers and a lighter footprint — there is no universally correct answer, only a reasoned tradeoff",
-        "Flux always wins because it has no UI",
-        "Argo CD always wins because it has more controllers",
-        "They are functionally identical, so pick by logo"
+        "Two controllers: one for Git polling and one for the web UI that renders the dependency graph and applies Kustomizations on request; both share a database holding each team's configuration",
+        "Separate controllers each doing one job: source-controller fetches Git, Helm and OCI artifacts, kustomize-controller applies overlays, helm-controller reconciles HelmReleases and notification-controller handles alerts and webhooks",
+        "A single monolithic controller that handles all resource types in one process and exposes them through one API group, which is why upgrades must be all-or-nothing, and its settings live in one shared ConfigMap",
+        "Controllers are optional plugins installed on top of a core agent, and only the agent talks to the Kubernetes API server while plugins communicate through it, each distributed as a separate chart release"
+      ],
+      "answer": 1
+    },
+    {
+      "question": "How does drift detection actually work?",
+      "options": [
+        "A reconciliation loop compares live cluster state with Git on an interval, and either reports the drift or, with self-heal enabled, re-applies the Git version",
+        "It only runs when a developer triggers it from the CLI, which compares the live objects with Git once and then stops until it is run again",
+        "It compares two Git branches on every commit and reports drift when the production branch has fewer commits than staging, without ever looking at the cluster",
+        "It uses a validating webhook on the Kubernetes API server that blocks every manual edit, so drift can never occur and no reconciliation loop is needed"
       ],
       "answer": 0
-    }
+    },
+    {
+      "question": "How do you handle secrets in a GitOps repo?",
+      "options": [
+        "Never commit plaintext secrets; use Sealed Secrets (cluster-specific key), SOPS (fields encrypted with KMS, PGP or age and decrypted at apply time) or External Secrets Operator (pulls at runtime, Git stores only a reference)",
+        "Keep them only in CI pipeline variables and inject them with kubectl at deploy time, because a GitOps repository should never contain any reference to secrets, and restrict who can edit the pipeline settings",
+        "Store them in ConfigMaps so they are easy to audit, because ConfigMap values are encrypted by default and visible only to cluster administrators, and use a read-only RBAC role for the people who need to audit them",
+        "Commit plaintext Secrets to a private repository, because Git provider access control is sufficient and encryption adds no meaningful protection against leaks, and rotate the repository credentials whenever someone leaves"
+      ],
+      "answer": 0
+    },
+    {
+      "question": "Argo CD vs Flux: what would make you pick one over the other?",
+      "options": [
+        "Argo CD always wins because it has more controllers, and Flux cannot manage more than one cluster from a single repository, and only Argo CD offers a dashboard that teams can rely on for production use",
+        "They are functionally identical, so the choice depends only on the logo and the licence, and you can swap one for the other without changing any manifests, which makes migration between them a simple copy of the same YAML files",
+        "Flux always wins because it has no UI and therefore a smaller attack surface, so Argo CD should only be used for non-production environments, and every team that needs a dashboard should build its own",
+        "Argo CD ships a UI, has stronger multi-cluster fan-out from one control plane and centres on the Application resource; Flux has smaller composable controllers and a lighter footprint — there is no universally correct answer, only a tradeoff"
+      ],
+      "answer": 3
+    },
+    
   ]
 }
