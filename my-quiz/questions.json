@@ -601,7 +601,7 @@
         "Argo CD ships a UI, has stronger multi-cluster fan-out from one control plane and centres on the Application resource; Flux has smaller composable controllers and a lighter footprint — there is no universally correct answer, only a tradeoff"
       ],
       "answer": 3
-    },
+    }
     
   ]
 }
